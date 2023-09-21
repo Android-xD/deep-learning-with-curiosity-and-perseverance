@@ -12,7 +12,7 @@ curiosity_navcam_color_large = os.path.join(data_dir, "curiosity", "NAVCAM_*", "
 curiosity_navcam_color_small = os.path.join(data_dir, "data", "curiosity", "NAVCAM_*", "N*A_*EDR_D*.png")
 
 # define the type of images we use from perceverance
-perseverance_mast_color = os.path.join(data_dir, "perseverance", "MCZ_*", "ZR0*EBY*.png")
+perseverance_mast_color = os.path.join(data_dir, "perseverance", "MCZ_*", "Z*0*EBY*.png")
 #perseverance_mast_bayer = os.path.join(data_dir, "perseverance", "MCZ_*", "ZR0*ECM*.png")
 
 perseverance_navcam_color = os.path.join(data_dir, "perseverance", "NAVCAM_*", "N*F_*.png")

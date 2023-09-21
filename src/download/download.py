@@ -122,6 +122,9 @@ def download_image(url, file_path, pbar):
     if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
         pbar.update(1)
         return
+    # create directory if necessary
+    os.makedirs(os.path.dirname(file_path),exist_ok=True)
+
     response = requests.get(url)
     if response.status_code == 200:
 
@@ -136,8 +139,14 @@ def load_urls_from_json(rover = "curiosity"):
     json_filepaths = glob.glob(url_dir)
     data_dict = {}
     for json_filepath in json_filepaths:
-        data = open(json_filepath, "r")
-        data_dict.update(json.load(data))
+        data_json = open(json_filepath, "r")
+        try:
+            data = json.load(data_json)
+            data_dict.update(data)
+        except:
+            print(f"remove broken: {json_filepath}")
+            os.remove(json_filepath)
+
     print(f"{len(data_dict)} urls found ")
     return data_dict
 
@@ -179,11 +188,9 @@ def load_selected_images_paralell(rover, path_reg):
     for thread in threads:
         thread.join()
 
-#load_curiosity_urls()
-load_selected_images_paralell("curiosity",configs.curiosity_mast_color_small)
+# load_curiosity_urls()
+# load_selected_images_paralell("curiosity",configs.curiosity_mast_color_small) # 1.3 GB
+# load_selected_images_paralell("curiosity",configs.curiosity_mast_color_small) # 0.9 GB
 # load_perseverance_urls()
-# load_selected_images_paralell("perseverance",configs.perseverance_mast_color)
-
-# MCZ contains EBY for color images
-# NAVCAM_LEFT NLF is color image
-# NAVCAM_RIGHT NLR is color image
+# load_selected_images_paralell("perseverance",configs.perseverance_mast_color) # 220 GB
+# load_selected_images_paralell("perseverance",configs.perseverance_navcam_color) # 43 GB
