@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
-import numpy as np
-import torch
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+
 
 def plot_images(imgs, titles=None, cmaps='gray', dpi=100, pad=.5,
                 adaptive=True, hpad=0.):
@@ -35,3 +35,26 @@ def plot_images(imgs, titles=None, cmaps='gray', dpi=100, pad=.5,
             ax[i].set_title(titles[i],fontsize=25)
     fig.tight_layout(pad=pad)
 
+
+def image_scatter_plot(img_list, x, y, zoom=1):
+    """ Scatter plot with images instead of points
+    Args:
+        img_list: list of images
+        x: x coordinates
+        y: y coordinates
+    """
+    def getImage(img):
+        # img = cv2.resize(img,(100,100))
+        return OffsetImage(img, zoom=zoom)
+
+    fig, ax = plt.subplots()
+    ax.set_xlabel("Feature 1")  # Set x-axis label
+    ax.set_ylabel("Feature 2")  # Set y-axis label
+
+    ax.scatter(x, y)
+    for x0, y0, img in zip(x, y, img_list):
+        ab = AnnotationBbox(getImage(img), (x0, y0), frameon=False)
+        ax.add_artist(ab)
+
+    # fig.savefig("overlap.png", dpi=600, bbox_inches="tight")
+    plt.show()
