@@ -7,6 +7,7 @@ import src.utils.configs as configs
 from src.utils.configs import data_dir
 from tqdm import tqdm
 from threading import Thread
+import cv2
 
 secrets_file = open("../../secrets.json", "r")
 secrets = json.load(secrets_file)
@@ -187,6 +188,20 @@ def load_selected_images_paralell(rover, path_reg):
 
     for thread in threads:
         thread.join()
+
+def purge_corrupted_images(path_reg):
+    """Remove all images of size 0"""
+    image_files = glob.glob(path_reg)
+    files_removed = []
+    for image_file in tqdm(image_files):
+        image = cv2.imread(image_file)
+        if image is None:
+            files_removed += [image_file]
+            os.remove(image_file)
+    print(f"{len(files_removed)} files removed: {files_removed}")
+    return files_removed
+
+# purge_corrupted_images(configs.perseverance_navcam_color)
 
 # load_curiosity_urls()
 # load_selected_images_paralell("curiosity",configs.curiosity_mast_color_small) # 1.3 GB
