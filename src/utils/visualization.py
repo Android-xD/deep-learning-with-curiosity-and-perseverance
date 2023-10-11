@@ -35,8 +35,53 @@ def plot_images(imgs, titles=None, cmaps='gray', dpi=100, pad=.5,
             ax[i].set_title(titles[i],fontsize=25)
     fig.tight_layout(pad=pad)
 
+def plot_image_grid(img_lists, titles=None, cmaps='gray', dpi=100, pad=.5, adaptive=False):
+    """
+    Takes a list of lists of images. Plots each list of images in a row with the corresponding title on the right side.
 
-def image_scatter_plot(img_list, x, y, zoom=1):
+    Args:
+        img_lists: A list of lists, where each inner list contains images.
+        titles: A list of strings, with titles for each row of images.
+        cmaps: Colormaps for monochrome images.
+        dpi: Dots per inch for the figure.
+        pad: Padding between rows.
+        adaptive: Whether the figure size should fit the image aspect ratios.
+    """
+    n = len(img_lists)
+    m = len(img_lists[0])  # Assuming all inner lists have the same length
+
+    if not isinstance(cmaps, (list, tuple)):
+        cmaps = [cmaps] * (n * m)
+
+    if adaptive:
+        # Calculate aspect ratios for each row based on the first list
+        ratios = [img_lists[0][i].shape[1] / img_lists[0][i].shape[0] for i in range(m)]
+    else:
+        # Assuming a default aspect ratio of 4:3
+        ratios = [4/3] * m
+
+    figsize = [sum(ratios) * 4.5, n * 4.5]
+    fig, axs = plt.subplots(n, m, figsize=figsize, dpi=dpi, gridspec_kw={'width_ratios': ratios})
+
+    for i in range(n):
+        for j in range(m):
+            img = img_lists[i][j]
+            axs[i, j].imshow(img, cmap=plt.get_cmap(cmaps[i * m + j]))
+            axs[i, j].get_yaxis().set_ticks([])
+            axs[i, j].get_xaxis().set_ticks([])
+            axs[i, j].set_axis_off()
+            for spine in axs[i, j].spines.values():
+                spine.set_visible(False)
+
+    if titles:
+        for i in range(n):
+            axs[i, 0].set_title(titles[i], fontsize=25)
+
+    fig.tight_layout(pad=pad)
+
+
+
+def image_scatter_plot(img_list, x, y, zoom=1, filename=None,featurex="Feature 1",featurey="Feature 2"):
     """ Scatter plot with images instead of points
     Args:
         img_list: list of images
@@ -48,13 +93,16 @@ def image_scatter_plot(img_list, x, y, zoom=1):
         return OffsetImage(img, zoom=zoom)
 
     fig, ax = plt.subplots()
-    ax.set_xlabel("Feature 1")  # Set x-axis label
-    ax.set_ylabel("Feature 2")  # Set y-axis label
+    ax.set_xlabel(featurex)  # Set x-axis label
+    ax.set_ylabel(featurey)  # Set y-axis label
 
-    ax.scatter(x, y)
+    ax.scatter(x, y, s=0.01)
     for x0, y0, img in zip(x, y, img_list):
-        ab = AnnotationBbox(getImage(img), (x0, y0), frameon=False)
+        ab = AnnotationBbox(getImage(img), (x0, y0), frameon=False,)
         ax.add_artist(ab)
 
-    # fig.savefig("overlap.png", dpi=600, bbox_inches="tight")
-    plt.show()
+    if filename:
+        plt.savefig(filename, dpi=600, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()
