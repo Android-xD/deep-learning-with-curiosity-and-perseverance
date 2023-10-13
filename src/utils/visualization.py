@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from src.utils.utils import batch2img_list
+import torch
 
 
 def plot_images(imgs, titles=None, cmaps='gray', dpi=100, pad=.5,
@@ -34,6 +36,28 @@ def plot_images(imgs, titles=None, cmaps='gray', dpi=100, pad=.5,
         if titles:
             ax[i].set_title(titles[i],fontsize=25)
     fig.tight_layout(pad=pad)
+
+
+def plot_dataset(dataset, rows, cols):
+    """Sample randomly rows*cols images from a dataset and plot them in a grid."""
+    imgs = []
+    perm = torch.randperm(len(dataset))
+    indices = perm[:(rows*cols)]
+    for i in indices:
+        sample, _ = dataset[i]
+        img = batch2img_list(sample.unsqueeze(0), 1)[0]
+        imgs.append(img)
+
+    # Create a grid layout for the images
+    fig, axes = plt.subplots(rows, cols, figsize=(16, int(16*rows/cols)))
+
+    for i, ax in enumerate(axes.flat):
+        ax.imshow(imgs[i], cmap='gray')
+        ax.axis('off')
+    plt.tight_layout()
+
+    plt.show()
+
 
 def plot_image_grid(img_lists, titles=None, cmaps='gray', dpi=100, pad=.5, adaptive=False):
     """
