@@ -29,9 +29,10 @@ def to_uint8(array):
 def is_color(img):
     """
     if diff is all zero it means all channels have the same values -> gray
-    if any value is not zero, it is a color image
+    However, we need to have a threshold because of transmission errors
+    that introduce color smears (probably).
     """
-    return np.diff(img, axis=2).any()
+    return np.mean(np.diff(img.astype(float), axis=2)) > 3
 
 
 def shannon_entropy(gray_image):
@@ -47,7 +48,8 @@ def shannon_entropy(gray_image):
 
 def spatial_variance(gray_image, ksize=9):
     """
-    Measures the sharpness of an image.
+    Measures the sharpness of an image as local color variance.
+    The resulting score has the same range as the pixel values squared. [0, 255^2]
     Computes the spatial variance of an image in grayscale.
     as E[X^2] - E[X]^2
     """
@@ -72,29 +74,38 @@ def crop_black_border(img, black_threshold=80):
 
     if inside_col.shape[0] == 0 or inside_row.shape[0] == 0:
         # the whole image is black
-        return img
+        return None
 
     x0, x1 = np.min(inside_row), np.max(inside_row)
     y0, y1 = np.min(inside_col), np.max(inside_col)
 
+    # check if the image is too small
+    if x0 >= x1-16 or y0 >= y1-16:
+        return None
+
     return img[y0:y1, x0:x1]
 
 
-def is_not_degenerate(path, only_color=True, min_entropy=3, min_size=128, min_spatial_variance=0):
-    """ Returns True if the image satisfies the constraints.
+def is_not_degenerate(path, only_color=True, min_entropy=2, min_size=64, min_spatial_variance=5):
+    """ Returns the cropped image if the image satisfies the constraints.
+        Otherwise, returns None
+        Minimum size is set to 64 to mitigate the compression artifacts of the small images.
         """
     image = cv2.imread(path)
     if image is None:
-        return False  # corrupted image
+        return None  # corrupted image
 
-    gray_image = cv2.imread(path, 0)
-    gray_image = crop_black_border(gray_image)
+    image = crop_black_border(image)
+    # cv2.error: OpenCV(4.8.1) /io/opencv/modules/imgproc/src/color.cpp:182: error: (-215:Assertion failed) !_src.empty() in function 'cvtColor'
+    if image is None or image.size == 0:
+        return None  # black image
+    gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     if only_color and not is_color(image):
-        return False
+        return None
     if min_size and gray_image.shape[0] < min_size or gray_image.shape[1] < min_size:
-        return False
+        return None
     if shannon_entropy(gray_image) < min_entropy:
-        return False
+        return None
     if spatial_variance(gray_image) < min_spatial_variance:
-        return False
-    return True
+        return None
+    return image

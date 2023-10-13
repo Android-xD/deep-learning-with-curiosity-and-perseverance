@@ -7,13 +7,15 @@ import src.utils.configs as configs
 from src.utils.configs import data_dir
 from tqdm import tqdm
 from threading import Thread
-import cv2
+
 
 secrets_file = open("../../secrets.json", "r")
 secrets = json.load(secrets_file)
 KEY = secrets["key"]
 
+
 def load_curiosity_urls_of_sol(sol, url_dir, img_dir):
+    """Load the urls of the curiosity images of a sol and save them to a json file."""
     url = f"https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos?sol={sol}&api_key={KEY}"
     os.makedirs(url_dir, exist_ok=True)
     json_filepath = os.path.join(url_dir, f"{sol}.json")
@@ -42,19 +44,22 @@ def load_curiosity_urls_of_sol(sol, url_dir, img_dir):
 
 
 def load_curiosity_urls():
-    n=4000
+    """Load the urls of the curiosity images and save them to a json file per sol."""
+    n = 4000
     pbar = tqdm(total=n, desc="load_curiosity_urls")
+
     def task(sols):
         for sol in sols:
             if not os.path.isfile(os.path.join(data_dir, "urls", "curiosity", f"{sol}.json")):
-                load_curiosity_urls_of_sol(sol, os.path.join(data_dir, "urls", "curiosity"), os.path.join(data_dir, "curiosity"))
+                load_curiosity_urls_of_sol(sol, os.path.join(data_dir, "urls", "curiosity"),
+                                           os.path.join(data_dir, "curiosity"))
             pbar.update(1)
 
     num_threads = 16
     threads = []
     for i in range(num_threads):
         sols = range(i, n, num_threads)
-        thread = Thread(target= lambda : task(sols))
+        thread = Thread(target=lambda: task(sols))
         threads.append(thread)
         thread.start()
 
@@ -63,6 +68,7 @@ def load_curiosity_urls():
 
 
 def load_perseverance_urls_of_page(page, url_dir, img_dir):
+    """Load the urls of the perseverance images and save them to a json file per page."""
     url = "https://mars.nasa.gov/rss/api/"
     params = {
         "feed": "raw_images",
@@ -71,7 +77,7 @@ def load_perseverance_urls_of_page(page, url_dir, img_dir):
         "order": "sol desc",
         "ver": "1.2",
         "num": 100,
-        "page":page
+        "page": page
     }
     os.makedirs(url_dir, exist_ok=True)
     json_filepath = os.path.join(url_dir, f"{page}.json")
@@ -79,8 +85,8 @@ def load_perseverance_urls_of_page(page, url_dir, img_dir):
         return
 
     response = requests.get(
-                url, params={**params}
-        )
+        url, params={**params}
+    )
     if response.status_code == 200:
         photos = response.json()["images"]
         urls = []
@@ -99,32 +105,37 @@ def load_perseverance_urls_of_page(page, url_dir, img_dir):
 
 
 def load_perseverance_urls():
+    """Load the urls of the perseverance images and save them to a json file per page. """
     n = 2872
     pbar = tqdm(total=n, desc="load_perseverance_urls")
 
     def task(pages):
         for page in pages:
             if not os.path.isfile(os.path.join(data_dir, "urls", "perseverance", f"{page}.json")):
-                load_perseverance_urls_of_page(page, os.path.join(data_dir, "urls", "perseverance"), os.path.join(data_dir, "perseverance"))
+                load_perseverance_urls_of_page(page, os.path.join(data_dir, "urls", "perseverance"),
+                                               os.path.join(data_dir, "perseverance"))
             pbar.update(1)
 
     num_threads = 16
     threads = []
     for i in range(num_threads):
         pages = range(i, n, num_threads)
-        thread = Thread(target= lambda : task(pages))
+        thread = Thread(target=lambda: task(pages))
         threads.append(thread)
         thread.start()
 
     for thread in threads:
         thread.join()
 
+
 def download_image(url, file_path, pbar):
+    """Download an image from an url and save it to a file path.
+    If file is empty or does not exist, download the image."""
     if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
         pbar.update(1)
         return
     # create directory if necessary
-    os.makedirs(os.path.dirname(file_path),exist_ok=True)
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
     response = requests.get(url)
     if response.status_code == 200:
@@ -135,7 +146,8 @@ def download_image(url, file_path, pbar):
     else:
         print("error")
 
-def load_urls_from_json(rover = "curiosity"):
+
+def load_urls_from_json(rover="curiosity"):
     url_dir = os.path.join(data_dir, "urls", rover, "*.json")
     json_filepaths = glob.glob(url_dir)
     data_dict = {}
@@ -151,23 +163,26 @@ def load_urls_from_json(rover = "curiosity"):
     print(f"{len(data_dict)} urls found ")
     return data_dict
 
+
 def load_images(image_data, pbar):
     for url, file_path in image_data.items():
         download_image(url, file_path, pbar)
 
-def load_images_paralell(rover= "curiosity"):
+
+def load_images_paralell(rover="curiosity"):
     image_data = load_urls_from_json(rover)
     pbar = tqdm(total=len(image_data))
     urls, files = list(image_data.keys()), list(image_data.values())
     num_threads = 8
     threads = []
     for i in range(num_threads):
-        thread = Thread(target= lambda : load_images(dict(zip(urls[i::num_threads], files[i::num_threads])),pbar))
+        thread = Thread(target=lambda: load_images(dict(zip(urls[i::num_threads], files[i::num_threads])), pbar))
         threads.append(thread)
         thread.start()
 
     for thread in threads:
         thread.join()
+
 
 def load_selected_images_paralell(rover, path_reg):
     image_data = load_urls_from_json(rover)
@@ -182,30 +197,20 @@ def load_selected_images_paralell(rover, path_reg):
     num_threads = 8
     threads = []
     for i in range(num_threads):
-        thread = Thread(target= lambda : load_images(dict(urls_files[i::num_threads]), pbar))
+        thread = Thread(target=lambda: load_images(dict(urls_files[i::num_threads]), pbar))
         threads.append(thread)
         thread.start()
 
     for thread in threads:
         thread.join()
 
-def purge_corrupted_images(path_reg):
-    """Remove all images of size 0"""
-    image_files = glob.glob(path_reg)
-    files_removed = []
-    for image_file in tqdm(image_files):
-        image = cv2.imread(image_file)
-        if image is None:
-            files_removed += [image_file]
-            os.remove(image_file)
-    print(f"{len(files_removed)} files removed: {files_removed}")
-    return files_removed
 
-# purge_corrupted_images(configs.perseverance_navcam_color)
-
-# load_curiosity_urls()
-# load_selected_images_paralell("curiosity",configs.curiosity_mast_color_small) # 1.3 GB
-# load_selected_images_paralell("curiosity",configs.curiosity_mast_color_small) # 0.9 GB
-# load_perseverance_urls()
-# load_selected_images_paralell("perseverance",configs.perseverance_mast_color) # 220 GB
-# load_selected_images_paralell("perseverance",configs.perseverance_navcam_color) # 43 GB
+if __name__ == "__main__":
+    load_perseverance_urls()
+    load_selected_images_paralell("perseverance", configs.perseverance_mast_color) # 220 GB
+    load_selected_images_paralell("perseverance", configs.perseverance_navcam_color) # 43 GB
+    # this needs to be done twice, because of the API rate limit of 2000 requests per hour
+    load_curiosity_urls()
+    load_selected_images_paralell("curiosity", configs.curiosity_mast_color_small) # 1.3 GB
+    load_selected_images_paralell("curiosity", configs.curiosity_mast_color_large) # 0.9 GB
+    load_selected_images_paralell("curiosity", configs.curiosity_navcam_gray)
