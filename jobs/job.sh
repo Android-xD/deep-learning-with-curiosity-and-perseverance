@@ -9,5 +9,5 @@
 #SBATCH --error=../logs/train.err
 #SBATCH --open-mode=truncate # to overrides out and err files, you can also use
 
-source startup.sh
-python train.py
+source scripts/startup.sh
+python src/training/train_variational_autoencoder.py
