@@ -96,8 +96,8 @@ def is_not_degenerate(path, only_color=True, min_entropy=2, min_size=64, min_spa
         return None  # corrupted image
 
     image = crop_black_border(image)
-    # cv2.error: OpenCV(4.8.1) /io/opencv/modules/imgproc/src/color.cpp:182: error: (-215:Assertion failed) !_src.empty() in function 'cvtColor'
-    if image is None or image.size == 0:
+
+    if image is None:
         return None  # black image
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     if only_color and not is_color(image):

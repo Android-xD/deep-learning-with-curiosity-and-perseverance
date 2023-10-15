@@ -20,8 +20,8 @@ def plot_images(imgs, titles=None, cmaps='gray', dpi=100, pad=.5,
     if adaptive:
         ratios = [i.shape[1] / i.shape[0] for i in imgs]  # W / H
     else:
-        ratios = [4/3] * n
-    figsize = [sum(ratios)*4.5, 4.5+ hpad]
+        ratios = [4 / 3] * n
+    figsize = [sum(ratios) * 4.5, 4.5 + hpad]
     fig, ax = plt.subplots(
         1, n, figsize=figsize, dpi=dpi, gridspec_kw={'width_ratios': ratios})
     if n == 1:
@@ -34,29 +34,33 @@ def plot_images(imgs, titles=None, cmaps='gray', dpi=100, pad=.5,
         for spine in ax[i].spines.values():  # remove frame
             spine.set_visible(False)
         if titles:
-            ax[i].set_title(titles[i],fontsize=25)
+            ax[i].set_title(titles[i], fontsize=25)
     fig.tight_layout(pad=pad)
 
 
-def plot_dataset(dataset, rows, cols):
+def plot_dataset(dataset, rows, cols, filename=None):
     """Sample randomly rows*cols images from a dataset and plot them in a grid."""
     imgs = []
     perm = torch.randperm(len(dataset))
-    indices = perm[:(rows*cols)]
+    indices = perm[:(rows * cols)]
     for i in indices:
         sample, _ = dataset[i]
         img = batch2img_list(sample.unsqueeze(0), 1)[0]
         imgs.append(img)
 
     # Create a grid layout for the images
-    fig, axes = plt.subplots(rows, cols, figsize=(16, int(16*rows/cols)))
+    fig, axes = plt.subplots(rows, cols, figsize=(16, int(16 * rows / cols)))
 
     for i, ax in enumerate(axes.flat):
         ax.imshow(imgs[i], cmap='gray')
         ax.axis('off')
     plt.tight_layout()
 
-    plt.show()
+    if filename:
+        plt.savefig(filename, dpi=600, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()
 
 
 def plot_image_grid(img_lists, titles=None, cmaps='gray', dpi=100, pad=.5, adaptive=False):
@@ -82,7 +86,7 @@ def plot_image_grid(img_lists, titles=None, cmaps='gray', dpi=100, pad=.5, adapt
         ratios = [img_lists[0][i].shape[1] / img_lists[0][i].shape[0] for i in range(m)]
     else:
         # Assuming a default aspect ratio of 4:3
-        ratios = [4/3] * m
+        ratios = [4 / 3] * m
 
     figsize = [sum(ratios) * 4.5, n * 4.5]
     fig, axs = plt.subplots(n, m, figsize=figsize, dpi=dpi, gridspec_kw={'width_ratios': ratios})
@@ -104,14 +108,18 @@ def plot_image_grid(img_lists, titles=None, cmaps='gray', dpi=100, pad=.5, adapt
     fig.tight_layout(pad=pad)
 
 
-
-def image_scatter_plot(img_list, x, y, zoom=1, filename=None,featurex="Feature 1",featurey="Feature 2"):
+def image_scatter_plot(img_list, x, y, zoom=1, filename=None, featurex="Feature 1", featurey="Feature 2"):
     """ Scatter plot with images instead of points
     Args:
         img_list: list of images
         x: x coordinates
         y: y coordinates
+        zoom: zoom factor for the images
+        filename: if not None, save the figure to this path
+        featurex: label for the x-axis
+        featurey: label for the y-axis
     """
+
     def getImage(img):
         # img = cv2.resize(img,(100,100))
         return OffsetImage(img, zoom=zoom)
@@ -122,7 +130,7 @@ def image_scatter_plot(img_list, x, y, zoom=1, filename=None,featurex="Feature 1
 
     ax.scatter(x, y, s=0.01)
     for x0, y0, img in zip(x, y, img_list):
-        ab = AnnotationBbox(getImage(img), (x0, y0), frameon=False,)
+        ab = AnnotationBbox(getImage(img), (x0, y0), frameon=False, )
         ax.add_artist(ab)
 
     if filename:
