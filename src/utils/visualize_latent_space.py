@@ -9,7 +9,7 @@ from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
 
 from src.utils.utils import batch2img_list
-from src.utils.visualization import image_scatter_plot, plot_images
+from src.utils.visualization import image_scatter_plot, plot_image_pairs, plot_images
 
 
 def lle(latent_features):
@@ -147,10 +147,31 @@ def knn(latent_features, dataset, num_clusters=30, n_neighbors=7):
         print(f"Cluster {i} Center Nearest Neighbors Indices: {indices}")
 
 
+def latent_interpolation(encode, decode, dataset, n=9, i=0, j=10, filename=None):
+    image1, _ = dataset[i]
+    image2, _ = dataset[j]
+    # encode them to get their latent representations
+    feat1 = encode(image1.unsqueeze(0))
+    feat2 = encode(image2.unsqueeze(0))
+    # interpolate between the two images in latent space
+    t = torch.linspace(0, 1, n)
+    interps = torch.stack([feat1*(1-i) + feat2*i for i in t])
+    # decode the interpolations
+    decoded = decode(interps)
+    pixel_interp = batch2img_list(torch.stack([image1*(1-i) + image2*i for i in t]), n)
+    latent_interp = batch2img_list(decoded, n)
+    # plot the interpolations
+    plot_image_pairs(pixel_interp, latent_interp)
+    if filename:
+        plt.savefig(filename, dpi=600, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()
+
 def image_scatter(latent_features, dataset, indices, filename=None):
     """Plot the latent features on a 2D plane with images as the points"""
     latent_features = latent_features[indices]
-    batch = torch.stack([dataset[ind] for ind in indices])
+    batch = torch.stack([dataset[ind][0] for ind in indices])
 
     img_list = batch2img_list(batch, len(indices))
     image_scatter_plot(img_list, latent_features[:,0], latent_features[:,1], filename=filename)
