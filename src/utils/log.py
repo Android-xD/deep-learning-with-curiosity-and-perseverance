@@ -32,7 +32,8 @@ def plot_losses(log, filer_types=None, filename=None, y_label=""):
     # Create a line plot with Seaborn
     sns.set_style("whitegrid")
     plt.figure(figsize=(10, 6))
-    sns.lineplot(data=df, x="Epoch", y="Value", hue="Type")
+    # confidence interval 95%
+    sns.lineplot(data=df, x="Epoch", y="Value", hue="Type", errorbar=("se", 2))
     plt.title("Training and Test Loss Over Epochs")
     # add legend for the confidence interval
 
@@ -48,3 +49,32 @@ def plot_losses(log, filer_types=None, filename=None, y_label=""):
     else:
         plt.show()
 
+def plot_losses_batch(log, filer_types=None, filename=None, y_label=""):
+    df = pd.DataFrame(log)
+    if filer_types is not None:
+        df = df[df["Type"].isin(filer_types)]
+
+    # Create a line plot with Seaborn
+    sns.set_style("whitegrid")
+    plt.figure(figsize=(10, 6))
+    # compute epoch from batch
+    for t in df["Type"].unique():
+        batches_per_epoch = len(df[df["Type"] == t]["Batch"].unique())
+        df.loc[df["Type"] == t, "Epoch"] += df[df["Type"] == t]["Batch"] / batches_per_epoch
+
+
+    sns.lineplot(data=df, x="Epoch", y="Value", hue="Type")
+    plt.title("Training and Test Loss Over Epochs")
+    # add legend for the confidence interval
+
+    plt.xlabel("Epoch")
+    plt.ylabel(y_label)
+    # set x-axis to integer ticks only
+    plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
+    plt.legend(title="Loss Type")
+    plt.tight_layout()
+    if filename is not None:
+        plt.savefig(filename, dpi=600, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()
