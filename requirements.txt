@@ -10,3 +10,7 @@ matplotlib
 tensorboard
 tensorboardX
 torchgeometry
+setuptools
+scikit-image
+pandas
+seaborn
