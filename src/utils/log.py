@@ -24,7 +24,7 @@ def epoch_report(log, epoch):
     return f"Epoch {epoch}: " + ", ".join([f"{k}: {v:.4f}" for k, v in df["Value"].items()])
 
 
-def plot_losses(log, filer_types=None, filename=None):
+def plot_losses(log, filer_types=None, filename=None, y_label=""):
     df = pd.DataFrame(log)
     if filer_types is not None:
         df = df[df["Type"].isin(filer_types)]
@@ -37,7 +37,7 @@ def plot_losses(log, filer_types=None, filename=None):
     # add legend for the confidence interval
 
     plt.xlabel("Epoch")
-    plt.ylabel("MSE Loss")
+    plt.ylabel(y_label)
     # set x-axis to integer ticks only
     plt.gca().get_xaxis().get_major_formatter().set_useOffset(False)
     plt.legend(title="Loss Type")

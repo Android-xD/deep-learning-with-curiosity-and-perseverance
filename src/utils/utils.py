@@ -86,7 +86,7 @@ def crop_black_border(img, black_threshold=80):
     return img[y0:y1, x0:x1]
 
 
-def is_not_degenerate(path, only_color=True, min_entropy=2, min_size=64, min_spatial_variance=5):
+def is_not_degenerate(path, only_color=True, min_entropy=4.75, min_size=64, min_spatial_variance=5):
     """ Returns the cropped image if the image satisfies the constraints.
         Otherwise, returns None
         Minimum size is set to 64 to mitigate the compression artifacts of the small images.

@@ -1,23 +1,15 @@
-import matplotlib.pyplot as plt
-import numpy as np
-import torch
-import torch.nn as nn
-import torchvision.transforms as transforms
-from torch.utils.data import DataLoader, random_split
-from tqdm import tqdm
 import os
 
-import src.utils.configs
-from src.utils.visualization import plot_images
-from src.utils.utils import batch2img_list
-from src.utils.configs import trained_weights_dir
-from src.data_preprocessing.dataset import ImageDataset
-from src.models.vae import VAE
+import numpy as np
+import torch
+import matplotlib.pyplot as plt
 from sklearn.manifold import LocallyLinearEmbedding
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
-from src.utils.visualization import image_scatter_plot
+
+from src.utils.utils import batch2img_list
+from src.utils.visualization import image_scatter_plot, plot_images
 
 
 def lle(latent_features):

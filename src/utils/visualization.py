@@ -38,6 +38,31 @@ def plot_images(imgs, titles=None, cmaps='gray', dpi=100, pad=.5,
     fig.tight_layout(pad=pad)
 
 
+def plot_image_pairs(img_list1, image_list2):
+    """
+    Plot a set of images horizontally.
+    img_list1 in the first row and img_list2 in the second row.
+    Args:
+        imgs: a list of NumPy or PyTorch images, RGB (H, W, 3) or mono (H, W).
+        titles: a list of strings, as titles for each image.
+        cmaps: colormaps for monochrome images.
+    """
+    num_images = min(len(img_list1), len(image_list2))
+    fig, axes = plt.subplots(2, num_images, figsize=(5 * num_images, 10))
+
+    for i in range(num_images):
+        axes[0, i].imshow(img_list1[i])
+        axes[0, i].set_title(" ")
+        axes[0, i].axis('off')
+
+        axes[1, i].imshow(image_list2[i])
+        axes[1, i].set_title(" ")
+        axes[1, i].axis('off')
+
+    plt.tight_layout()
+
+
+
 def plot_dataset(dataset, rows, cols, filename=None):
     """Sample randomly rows*cols images from a dataset and plot them in a grid."""
     imgs = []
