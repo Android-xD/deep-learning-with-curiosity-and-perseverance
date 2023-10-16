@@ -1,39 +1,51 @@
 import os
 import glob
+
 import cv2
+import torch
+import seaborn as sns
 import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+
 import src.utils.configs as configs
 from src.utils.utils import human_readable_size
-from src.utils.visualization import plot_images
+from src.utils.visualization import plot_images, image_scatter_plot, plot_image_grid
+from src.utils.utils import spatial_variance, shannon_entropy, crop_black_border
 
 
 def create_image_samples(rover="curiosity"):
     """Plot a few image samples for each camera type. """
-    rover_dir = os.path.join("..", "..", "data", rover)
+    rover_dir = os.path.join(configs.data_dir, rover)
     camera_types = os.listdir(rover_dir)
     camera_types = [name.replace("LEFT", "*") for name in camera_types]
     camera_types = [name.replace("RIGHT", "*") for name in camera_types]
     camera_types = set(camera_types)
+
+    img_lists = []
 
     for i, cam_type in enumerate(camera_types):
         img_list = glob.glob(os.path.join(rover_dir, cam_type, "*"))
         samples = np.arange(len(img_list))
         np.random.shuffle(samples)
         imgs = []
-        for i in samples:
-            img = cv2.imread(img_list[i])
+        for j in samples:
+            img = cv2.imread(img_list[j])
             if not img is None:
                 imgs.append(img[:, :, ::-1])
-            if len(imgs) > 10:
+            if len(imgs) > 6:
                 break
 
         plot_images(imgs)
-        path = os.path.join("..", "..", "figures", rover, cam_type + ".png")
+        path = os.path.join(configs.fig_dir, rover, cam_type + ".png")
         os.makedirs(os.path.dirname(path), exist_ok=True)
         path = path.replace("_*", "")
         plt.savefig(path)
+
+        img_lists += [imgs]
+    plot_image_grid(img_lists, list(camera_types))
+    path = os.path.join(configs.fig_dir, rover, "GRID.png")
+    plt.savefig(path)
 
 
 def get_image_shapes(path_reg):
@@ -49,22 +61,52 @@ def get_image_shapes(path_reg):
             sizes[res] += 1
         else:
             sizes[res] = 1
+
+    # sort the dict by counts
+    sizes = {k: v for k, v in sorted(sizes.items(), key=lambda item: item[1], reverse=True)}
     return sizes
 
 
 def get_total_size(path_reg):
     """Compute the total size of the specified files """
     image_files = glob.glob(path_reg)
-    total_size = 0
-    for image_file in tqdm(image_files):
-        # Read the image using cv2 and compute its size
-        image = cv2.imread(image_file)
-        if image is not None:
-            total_size += image.nbytes  # Get the size in bytes of the image data
-    return total_size
+    return human_readable_size(sum([os.path.getsize(file) for file in image_files]))
+
+def get_sharpness_and_entropy(path_list, filename="sharpness_entropy.png", zoom=0.1, n=1000):
+    """Compute sharpness and entropy of the images in the list.
+    make a scatter plot of the two values
+    It collects exactly n images, and skips images that are degenerate or unable to be read.
+    """
+    n = min(n, len(path_list))
+    sharpness, entropy = np.zeros(n), np.zeros(n)
+    img_list = []
+    # get a random permutation of the indices
+    indices = torch.randperm(len(path_list))
+    pbar = tqdm(total=n)
+    for j in indices:
+        i = len(img_list)
+        if i >= n:
+            # we have enough images
+            break
+        image = cv2.imread(path_list[j])
+        image = crop_black_border(image)
+        if image is None:
+            continue
+        pbar.update(1)
+        img_list.append(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+        gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        sharpness[i] = spatial_variance(gray_image)
+        entropy[i] = shannon_entropy(gray_image)
+
+    image_scatter_plot(img_list, sharpness, entropy,
+                       zoom=zoom, filename=filename,
+                       featurex= "Sharpness", featurey="Entropy")
 
 
 if __name__ == "__main__":
+    fig_dir = os.path.join(configs.fig_dir, "data_exploration")
+    os.makedirs(fig_dir, exist_ok=True)
+
     image_types = {
         "curiosity_mast_color_small": configs.curiosity_mast_color_small,
         "curiosity_mast_color_large": configs.curiosity_mast_color_large,
@@ -72,8 +114,13 @@ if __name__ == "__main__":
         "perseverance_navcam_color": configs.perseverance_navcam_color
     }
     for name, conf in image_types.items():
-        print(name, human_readable_size(get_total_size(conf)))
-        print(get_image_shapes(conf))
+        # print(name, get_total_size(conf))
+        # print(get_image_shapes(conf))
+        zoom = 0.1 if "small" in name else 0.01
+        get_sharpness_and_entropy(
+            glob.glob(conf),
+            os.path.join(fig_dir, f"{name}.png"),
+            zoom=zoom)
 
     # create_image_samples("curiosity")
     # create_image_samples("perseverance")
