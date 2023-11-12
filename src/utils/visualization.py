@@ -38,7 +38,7 @@ def plot_images(imgs, titles=None, cmaps='gray', dpi=100, pad=.5,
     fig.tight_layout(pad=pad)
 
 
-def plot_image_pairs(img_list1, image_list2):
+def plot_image_pairs(img_list1, image_list2, filename=None):
     """
     Plot a set of images horizontally.
     img_list1 in the first row and img_list2 in the second row.
@@ -51,16 +51,20 @@ def plot_image_pairs(img_list1, image_list2):
     fig, axes = plt.subplots(2, num_images, figsize=(5 * num_images, 10))
 
     for i in range(num_images):
-        axes[0, i].imshow(img_list1[i])
+        axes[0, i].imshow(img_list1[i], cmap='gray')
         axes[0, i].set_title(" ")
         axes[0, i].axis('off')
 
-        axes[1, i].imshow(image_list2[i])
+        axes[1, i].imshow(image_list2[i], cmap='gray')
         axes[1, i].set_title(" ")
         axes[1, i].axis('off')
 
     plt.tight_layout()
-
+    if filename:
+        plt.savefig(filename, dpi=600, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()
 
 
 def plot_dataset(dataset, rows, cols, filename=None):
@@ -88,7 +92,7 @@ def plot_dataset(dataset, rows, cols, filename=None):
         plt.show()
 
 
-def plot_image_grid(img_lists, titles=None, cmaps='gray', dpi=100, pad=.5, adaptive=False):
+def plot_image_grid(img_lists, titles=None, cmaps='gray', dpi=100, pad=.5, adaptive=False,filename=None):
     """
     Takes a list of lists of images. Plots each list of images in a row with the corresponding title on the right side.
 
@@ -131,6 +135,11 @@ def plot_image_grid(img_lists, titles=None, cmaps='gray', dpi=100, pad=.5, adapt
             axs[i, 0].set_title(titles[i], fontsize=25)
 
     fig.tight_layout(pad=pad)
+    if filename:
+        plt.savefig(filename, dpi=600, bbox_inches="tight")
+        plt.close()
+    else:
+        plt.show()
 
 
 def image_scatter_plot(img_list, x, y, zoom=1, filename=None, featurex="Feature 1", featurey="Feature 2"):
