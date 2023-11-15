@@ -1,40 +1,35 @@
+import os
 import matplotlib.pyplot as plt
 import torch
-from denoising_diffusion_pytorch import Unet, GaussianDiffusion
-from src.data_preprocessing.dataset import ImageDataset
-from src.utils import configs
-from torchvision import transforms
-from src.utils.set_random_seeds import set_seeds
-from torch.utils.data.dataloader import DataLoader
 from tqdm import tqdm
+from torchvision import transforms
+from denoising_diffusion_pytorch import Unet, GaussianDiffusion
+
+from src.data_preprocessing.dataset import  ImageDataset, train_test_dataloader, get_transform
+from src.utils.set_random_seeds import set_seeds
 from src.utils.visualization import plot_images, plot_dataset
 from src.utils.utils import batch2img_list
-from src.data_preprocessing.dataset import train_test_dataloader
-import os
 from src.utils.configs import trained_weights_dir
 from src.utils.log import epoch_report, plot_losses
+from src.utils import configs
 
 if __name__ == '__main__':
     set_seeds()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     log = []
-    fig_dir = os.path.join(configs.fig_dir, "diffusion")
+    experiment = "perseverance_nav"
+    fig_dir = os.path.join(configs.fig_dir, f"diffusion_{experiment}")
     os.makedirs(fig_dir, exist_ok=True)
 
     # Hyperparameters
     batch_size = 8
     learning_rate = 0.0005
-    num_epochs = 10
+    num_epochs = 4
     input_size = 64
-    dataset_name = "curiosity_mast_color_small"  # "perseverance_mast_color"
+    dataset_name = "perseverance_navcam_color" # "curiosity_mast_color_small"
 
     # Data preprocessing and transformation
-    transform = transforms.Compose([
-        transforms.Resize(2 * input_size),
-        transforms.RandomCrop((input_size, input_size)),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-    ])
+    transform = get_transform(input_size, augment=True)
 
     model = Unet(
         dim=64,
@@ -66,21 +61,20 @@ if __name__ == '__main__':
 
             optimizer.step()
         print(epoch_report(log, epoch))
-
-    # plot_losses(log)
-    plt.savefig(os.path.join(fig_dir, f"diffusion_loss.png"), dpi=600, bbox_inches="tight")
+        state_dict = {
+            "model_state": diffusion.state_dict(),
+            "log": log,
+            "batch_size": batch_size,
+            "learning_rate": learning_rate,
+            "num_epochs": num_epochs,
+            "dataset_name": dataset_name,
+            "input_size": input_size,
+        }
+        torch.save(state_dict, os.path.join(trained_weights_dir, f'diffusion_{experiment}.pth'))
+    plot_losses(log, filename=os.path.join(fig_dir, f"diffusion_loss.png"))
 
     # Save the trained model
-    state_dict = {
-        "model_state": diffusion.state_dict(),
-        "log": log,
-        "batch_size": batch_size,
-        "learning_rate": learning_rate,
-        "num_epochs": num_epochs,
-        "dataset_name": dataset_name,
-        "input_size": input_size,
-    }
-    torch.save(state_dict, os.path.join(trained_weights_dir, 'diffusion.pth'))
+
 
     with torch.inference_mode():
         for i in range(20):
