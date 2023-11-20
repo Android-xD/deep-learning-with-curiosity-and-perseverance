@@ -15,7 +15,10 @@ KEY = secrets["key"]
 
 
 def load_curiosity_urls_of_sol(sol, url_dir, img_dir):
-    """Load the urls of the curiosity images of a sol and save them to a json file."""
+    """Load the urls of the curiosity images of a sol and save them to a json file.
+
+    Tutorial: https://proulxp.github.io/CS290-How-To-Guide/rover.html
+    """
     url = f"https://api.nasa.gov/mars-photos/api/v1/rovers/curiosity/photos?sol={sol}&api_key={KEY}"
     os.makedirs(url_dir, exist_ok=True)
     json_filepath = os.path.join(url_dir, f"{sol}.json")
@@ -68,7 +71,10 @@ def load_curiosity_urls():
 
 
 def load_perseverance_urls_of_page(page, url_dir, img_dir):
-    """Load the urls of the perseverance images and save them to a json file per page."""
+    """Load the urls of the perseverance images and save them to a json file per page.
+
+    Adapted from https://github.com/kmgill/cassini_processing/blob/master/fetch_m20_raw.py
+    """
     url = "https://mars.nasa.gov/rss/api/"
     params = {
         "feed": "raw_images",
