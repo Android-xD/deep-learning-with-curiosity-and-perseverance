@@ -1,12 +1,38 @@
 import glob
 import os
 from PIL import Image, ImageFile
+from torchvision import transforms
 
 from torch.utils.data import Dataset, DataLoader, random_split
 from src.utils.color_conversions import rgb2lab_torch
 from src.utils.configs import data_dir
 # fix for truncated images
 ImageFile.LOAD_TRUNCATED_IMAGES = True
+
+def get_transform(input_size, augment=True):
+    """Returns a transform for the dataset."""
+    if not augment:
+        return transforms.Compose([
+                transforms.Resize(input_size),
+                transforms.CenterCrop((input_size, input_size)),
+                transforms.ToTensor(),
+            ])
+    else:
+        return transforms.Compose([
+                transforms.Resize(2 * input_size),
+                transforms.RandomCrop((input_size, input_size)),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+            ])
+
+    # define other transform
+transform = transforms.Compose([
+    # random resized crop
+    transforms.RandomResizedCrop(224),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+])
+
 
 
 def train_test_dataloader(dataset, batch_size, train_fraction=0.9):
@@ -38,7 +64,7 @@ class ImageDataset(Dataset):
         if self.transform:
             image = self.transform(image)
 
-        return image, 0
+        return image, idx
 
 
 class CIELABDataset(Dataset):
@@ -82,8 +108,7 @@ if __name__ == '__main__':
     dataset_list = os.listdir(os.path.join(data_dir, "datasets"))
     input_size = 128
     transform = transforms.Compose([
-        transforms.Resize(2 * input_size),
-        transforms.RandomCrop((input_size, input_size)),
+        transforms.RandomResizedCrop(input_size, scale=(0.2, 1.)),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
     ])

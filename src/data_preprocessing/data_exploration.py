@@ -110,6 +110,7 @@ if __name__ == "__main__":
     image_types = {
         "curiosity_mast_color_small": configs.curiosity_mast_color_small,
         "curiosity_mast_color_large": configs.curiosity_mast_color_large,
+        "curiosity_navcam_gray": configs.curiosity_navcam_gray,
         "perseverance_mast_color": configs.perseverance_mast_color,
         "perseverance_navcam_color": configs.perseverance_navcam_color
     }
