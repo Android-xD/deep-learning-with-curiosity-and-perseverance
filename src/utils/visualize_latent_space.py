@@ -172,7 +172,7 @@ def single_cluster(latent_features, dataset, num_clusters=5, n_neighbors=100, fi
 
 
     for i, center in enumerate(cluster_centers):
-        _, indices = np.where(cluster_labels == i)
+        indices = np.where(cluster_labels == i)[-1]
         # shuffle indices
         indices = indices.ravel()[torch.randperm(len(indices))]
         pca = PCA(n_components=2)
@@ -190,7 +190,7 @@ def single_cluster(latent_features, dataset, num_clusters=5, n_neighbors=100, fi
         grid_size = 8
         ll = [None] * grid_size
         for j in range(grid_size):
-            ll[j] = batch2img_list(torch.stack([dataset[ind][0] for ind in indices[0, j*grid_size:(j+1)*grid_size]]), grid_size)
+            ll[j] = batch2img_list(torch.stack([dataset[ind][0] for ind in indices[j*grid_size:(j+1)*grid_size]]), grid_size)
 
         if figure_dir:
             filename = os.path.join(figure_dir, f"single_cluster_grid{i}.png")

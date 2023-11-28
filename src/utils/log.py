@@ -4,14 +4,47 @@ import json
 import os
 import glob
 import matplotlib.pyplot as plt
-"""
-The log is implemented as a list of dicts like
+import re
 
-{"Epoch": epoch, "Batch": i, "Type": "Train Loss", "Value": loss.item()}
-{"Epoch": epoch, "Batch": i, "Type": "Test Loss", "Value": loss.item()}
 
- We then provide functions that read out relevant information from the log and make plots.
-"""
+def read_log(log_file, fine=False):
+    """
+    The log is implemented as a list of dicts like
+
+    {"Epoch": epoch, "Batch": i, "Type": "Train Loss", "Value": loss.item()}
+    {"Epoch": epoch, "Batch": i, "Type": "Test Loss", "Value": loss.item()}
+
+     We read out relevant information from the log and make plots.
+    """
+    loss_list = []
+
+    with open(log_file, 'r') as file:
+        lines = file.readlines()
+        epoch = 0
+        for line in lines:
+            epoch_match = re.search(r'Epoch: \[(\d+)\]\[(\d+)\/(\d+)\].+Loss (\d+\.\d+)', line)
+            if epoch_match and not fine:
+                epoch = int(epoch_match.group(1))
+                batch = int(epoch_match.group(2))
+                total_batches = int(epoch_match.group(3))
+                loss = float(epoch_match.group(4))
+
+                train_loss_entry = {"Epoch": epoch, "Batch": batch, "Type": "Train Loss", "Value": loss}
+                #test_loss_entry = {"Epoch": epoch, "Batch": batch, "Type": "Test Loss", "Value": loss}
+
+                loss_list.append(train_loss_entry)
+                #loss_list.append(test_loss_entry)
+            else:
+                # Handle the alternative format
+                alt_epoch_match = re.search(r'(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+).+Loss (\d+\.\d+)', line)
+                if alt_epoch_match and fine:
+                    epoch +=1
+                    loss = float(alt_epoch_match.group(2))
+
+                    entry = {"Epoch": epoch, "Type": "Train Loss", "Value": loss}
+                    loss_list.append(entry)
+
+    return loss_list
 
 def epoch_report(log, epoch):
     """Filters the list of dictionary's and extracts the mean for a given epoch and type."""
@@ -78,3 +111,9 @@ def plot_losses_batch(log, filer_types=None, filename=None, y_label=""):
         plt.close()
     else:
         plt.show()
+
+if __name__ == '__main__':
+    log = read_log("../../logs/imagenet-autoencoder_vgg16.err", fine=False)
+    plot_losses(log, filename="../../figures/imagenet-autoencoder/loss_imagenet-autoencoder_vgg16.png")
+    log = read_log("../../logs/fine-imagenet-autoencoder.err", fine=True)
+    plot_losses(log, filename="../../figures/imagenet-autoencoder/loss_fine-imagenet-autoencoder.png")

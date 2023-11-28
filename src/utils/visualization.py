@@ -86,7 +86,7 @@ def plot_dataset(dataset, rows, cols, filename=None):
     plt.tight_layout()
 
     if filename:
-        plt.savefig(filename, dpi=600, bbox_inches="tight")
+        plt.savefig(filename, dpi=100, bbox_inches="tight")
         plt.close()
     else:
         plt.show()
