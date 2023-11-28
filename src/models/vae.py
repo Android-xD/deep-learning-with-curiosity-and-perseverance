@@ -113,4 +113,4 @@ class VAE(nn.Module):
         return self.fc_mu(hidden)
 
     def decode(self, z):
-        self.decoder(z.view(z.size(0), -1, 1, 1))
+        return self.decoder(z.view(z.size(0), -1, 1, 1))

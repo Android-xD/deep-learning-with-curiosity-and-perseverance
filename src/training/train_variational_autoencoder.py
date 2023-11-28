@@ -5,8 +5,8 @@ import torchvision.transforms as transforms
 from tqdm import tqdm
 import os
 
-from src.utils.visualization import plot_images, plot_image_pairs
-from src.utils.log import epoch_report, plot_losses
+from src.utils.visualization import plot_image_pairs
+from src.utils.log import epoch_report, plot_losses, plot_losses_batch
 from src.utils.utils import batch2img_list
 from src.utils.set_random_seeds import set_seeds
 from src.utils.configs import trained_weights_dir
@@ -18,15 +18,16 @@ if __name__ == '__main__':
     set_seeds()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     log = []
-    fig_dir = os.path.join(configs.fig_dir, "vae")
+    experiment = "vae_16_0.001"
+    fig_dir = os.path.join(configs.fig_dir, "vae", experiment)
     os.makedirs(fig_dir, exist_ok=True)
 
     # Hyperparameters
     batch_size = 8
     learning_rate = 0.0005
     num_epochs = 20
-    input_size = 64
-    dataset_name = "perseverance_navcam_color"
+    input_size = 16
+    dataset_name = "curiosity_mast_color_small"
 
     # Initialize the encoder and decoder
     vae_16 = VAE(in_channels=3, out_channels=32,
@@ -49,7 +50,7 @@ if __name__ == '__main__':
                   encoder_channels=[32, 64, 128, 256, 512, 1024],
                   decoder_channels=[1024, 512, 256, 128, 64, 32])
 
-    vae = vae_64.to(device)
+    vae = vae_16.to(device)
 
     # Data preprocessing and transformation
     transform = transforms.Compose([
@@ -64,7 +65,8 @@ if __name__ == '__main__':
     train_dataloader, test_dataloader = train_test_dataloader(dataset, batch_size)
 
     # Plot the beta schedule
-    beta_schedule = torch.linspace(0, 1, num_epochs)
+    beta_schedule = torch.zeros(num_epochs)
+    beta_schedule[:num_epochs//2] = 0.001 * torch.linspace(0, 1, num_epochs//2)
     # Plot the beta schedule
     plt.figure()
     plt.xlabel("epoch")
@@ -132,11 +134,11 @@ if __name__ == '__main__':
                     plt.close()
 
         print(epoch_report(log, epoch))
-    plot_losses(log, filer_types=["Test Loss", "Train Loss"], filename=os.path.join(fig_dir, f"beta_losses.png"))
+    plot_losses(log, filer_types=["Test Loss", "Train Loss"], filename=os.path.join(fig_dir, f"MSE+beta_x_KL_losses.png"))
     plot_losses(log, filer_types=["Test MSE Loss", "Train MSE Loss"], filename=os.path.join(fig_dir, f"MSE_losses.png"))
     plot_losses(log, filer_types=["Test KL Loss", "Train KL Loss"], filename=os.path.join(fig_dir, f"KL_losses.png"))
     plot_losses(log, filer_types=None, filename=os.path.join(fig_dir, f"losses.png"))
-
+    plot_losses_batch(log, filer_types=["Test Loss", "Train Loss"], filename=os.path.join(fig_dir, f"losses_batch.png"))
     # Save the trained model
     state_dict = {
         "model_state": vae.state_dict(),
@@ -147,4 +149,4 @@ if __name__ == '__main__':
         "dataset_name": dataset_name,
         "input_size": input_size,
     }
-    torch.save(state_dict, os.path.join(trained_weights_dir, 'vae.pth'))
+    torch.save(state_dict, os.path.join(trained_weights_dir, f'vae_{experiment}.pth'))
